@@ -67,3 +67,9 @@ python app.py
 ```
 
 收入=生活费；支出=固定支出合计+记账合计；结余=收−支。固定支出也带类型，会并入消费类型饼图。
+
+## 关于本项目
+
+![Designed with Claude](https://img.shields.io/badge/Designed_%26_Generated_by-Claude-D97757?logo=anthropic&logoColor=white)
+
+本项目由 **Claude (Anthropic)** 完成设计与代码生成；需求定义、边界拍板与 prompt engineering 由本人负责。
