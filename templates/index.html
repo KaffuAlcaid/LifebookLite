@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>月度生活费账本</title>
+  <!-- 显示字体（数字/标题用），无网络时自动回退到系统字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet" />
+  <!-- 饼图库（CDN，首次加载需联网） -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">账</span>
+      <div>
+        <h1>月度生活费账本</h1>
+        <p class="today">北京时间 <span id="today">----/--/--</span></p>
+      </div>
+    </div>
+    <div class="save-area">
+      <span id="dirty-flag" class="dirty-flag hidden">● 有未写入的改动</span>
+      <button id="btn-write" class="btn btn-write">写　入</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- 左：操作区 -->
+    <aside class="sidebar">
+      <!-- 月份 / 视图 -->
+      <section class="panel">
+        <h2 class="panel-title">月份与视图</h2>
+        <label class="field">
+          <span>当前月份</span>
+          <select id="month-select"></select>
+        </label>
+        <div class="newmonth-row">
+          <input type="month" id="new-month-input" />
+          <button id="btn-new-month" class="btn btn-soft">新增月份</button>
+        </div>
+        <div class="view-toggle" id="view-toggle">
+          <button class="seg active" data-view="month">月度</button>
+          <button class="seg" data-view="quarter">季度</button>
+        </div>
+      </section>
+
+      <!-- 记账 -->
+      <section class="panel">
+        <h2 class="panel-title" id="entry-form-title">新增记账</h2>
+        <label class="field">
+          <span>金额 <em class="req">必填</em></span>
+          <input type="number" id="entry-amount" step="0.01" min="0" placeholder="0.00" />
+        </label>
+        <label class="field">
+          <span>消费类型 <em class="req">必填</em></span>
+          <select id="entry-type"></select>
+        </label>
+        <label class="field">
+          <span>内容（可选）</span>
+          <input type="text" id="entry-content" placeholder="如：午饭 / 公交" maxlength="40" />
+        </label>
+        <p class="field-note">日期自动取北京当天：<span id="entry-date">----/--/--</span></p>
+        <div class="form-actions">
+          <button id="btn-add-entry" class="btn btn-accent">添加到本月</button>
+          <button id="btn-cancel-edit" class="btn btn-soft hidden">取消编辑</button>
+        </div>
+      </section>
+
+      <!-- 本月设置 -->
+      <section class="panel">
+        <h2 class="panel-title">本月设置</h2>
+        <label class="field">
+          <span>每月生活费</span>
+          <input type="number" id="allowance" step="0.01" min="0" placeholder="0.00" />
+        </label>
+        <div class="fixed-head">
+          <span>每月固定支出（分项）</span>
+        </div>
+        <div id="fixed-list" class="fixed-list"></div>
+        <div class="fixed-add">
+          <input type="text" id="fx-name" placeholder="名称 如房租" maxlength="20" />
+          <input type="number" id="fx-amount" placeholder="金额" step="0.01" min="0" />
+          <select id="fx-type"></select>
+          <button id="btn-add-fixed" class="btn btn-soft">＋</button>
+        </div>
+      </section>
+
+      <!-- 备份 -->
+      <section class="panel">
+        <h2 class="panel-title">备份管理</h2>
+        <p class="field-note">每次“写入”会自动备份上一版本。当前备份 <span id="backup-count">0</span> 份。</p>
+        <div class="form-actions">
+          <button id="btn-prune" class="btn btn-soft">清除老备份（留3份）</button>
+          <button id="btn-clear" class="btn btn-danger">清空备份</button>
+        </div>
+      </section>
+    </aside>
+
+    <!-- 右：可视化 -->
+    <section class="main">
+      <div class="scope-label" id="scope-label">月度 · ----/--</div>
+
+      <div class="summary-cards">
+        <div class="sum-card income">
+          <span class="sum-label">收入（生活费）</span>
+          <span class="sum-value" id="sum-income">0</span>
+        </div>
+        <div class="sum-card expense">
+          <span class="sum-label">支出</span>
+          <span class="sum-value" id="sum-expense">0</span>
+        </div>
+        <div class="sum-card balance">
+          <span class="sum-label">结余</span>
+          <span class="sum-value" id="sum-balance">0</span>
+        </div>
+      </div>
+
+      <div class="chart-wrap panel">
+        <h2 class="panel-title">消费类型分布</h2>
+        <div class="chart-box">
+          <canvas id="pie"></canvas>
+          <p id="chart-empty" class="chart-empty hidden">本期暂无支出</p>
+        </div>
+        <p class="field-note">固定支出 <span id="bd-fixed">0</span> ＋ 记账 <span id="bd-entries">0</span></p>
+      </div>
+
+      <div class="entries-wrap">
+        <div class="entries-head">
+          <h2 class="panel-title" id="entries-title">本月账目</h2>
+          <span class="entries-count" id="entries-count"></span>
+        </div>
+        <div id="entries" class="entries"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 通用确认弹窗 -->
+  <div id="modal" class="modal-mask hidden">
+    <div class="modal">
+      <p id="modal-text"></p>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn btn-soft">取消</button>
+        <button id="modal-ok" class="btn btn-danger">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

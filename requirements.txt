@@ -1,0 +1,4 @@
+Flask>=3.0
+# zoneinfo 是 Python 3.9+ 标准库，无需额外安装
+# Windows 上若 ZoneInfo 找不到时区数据，再加一行：
+# tzdata
